@@ -1,0 +1,57 @@
+.detail-page {
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.detail-card {
+  display: flex;
+  gap: 25px;
+  max-width: 900px;
+  border: 1px solid #ddd;
+  padding: 20px;
+  background-color: #fafafa;
+  box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+}
+
+.detail-image {
+  width: 320px;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.detail-info {
+  flex: 1;
+}
+
+.detail-info h2 {
+  margin-bottom: 10px;
+}
+
+.detail-info p {
+  margin: 6px 0;
+  font-size: 15px;
+  color: #444;
+}
+
+.price {
+  font-size: 18px;
+  font-weight: bold;
+  color: green;
+}
+
+.cart-btn {
+  margin-top: 15px;
+  padding: 12px 20px;
+  background-color: #ff9f00;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  border-radius: 5px;
+}
+
+.cart-btn:hover {
+  background-color: #fb8c00;
+}
