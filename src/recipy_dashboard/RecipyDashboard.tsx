@@ -1,117 +1,106 @@
-import axios from 'axios';
-import { useEffect, useState } from 'react'
-import Navbar from '../navbar/Navbar'
-import './RecipyDashboard.css'
-import Card from '../card/Card'
+import axios from "axios";
+import { useEffect, useState } from "react";
+import Navbar from "../navbar/Navbar";
+import Card from "../card/Card";
+import "./RecipyDashboard.css";
 
+const API_KEY = "6227f2c3ca0445978e061a3a69679bfd";
+const LIMIT = 16;
 
 const RecipyDashboard = () => {
-  const [recipes, setRecipes] = useState([])
-  const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  // const [currentPage, setCurrentPage] = useState(1)
-  const [page, setPage] = useState(1);
-  const [loading,setLoading] = useState(true)
-
-  const productsPerPage = 16
-
+  const [recipes, setRecipes] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery)
-    }, 1000)
+      setDebouncedSearch(searchQuery);
+      setRecipes([]);
+      setPage(0);
+      setHasMore(true);
+    }, 700);
 
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  useEffect(async () => {
-    const response = await axios.get(`https://dummyjson.com/recipes?page{page}`);
-    setRecipes(prev=>[...prev, ...response.data]);
-    setLoading(false)
-  }, [page])
-
-  const handleScroll = () =>{
-    // console.log(document.documentElement.scrollHeight);
-    // console.log(document.documentElement.scrollTop);
-    // console.log(window.innerHeight)
-    if(window.innerHeight + document.documentElement.scrollTop+1>=document.documentElement.scrollHeight){
-      setLoading(true)
-      setPage(prev=>prev+1)
-
-    }
-  }
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
-    window.addEventListener("scroll", handleScroll)
-    return ()=>window.removeEventListener("scroll",handleScroll)
-  }, [])
+    const fetchRecipes = async () => {
+      if (!hasMore || loading) return;
 
-  // useEffect(() => {
-  //   const baseUrl = 'https://dummyjson.com/recipes'
-  //   const url = debouncedSearch
-  //     ? `${baseUrl}/search?q=${encodeURIComponent(debouncedSearch)}`
-  //     : baseUrl
+      setLoading(true);
+      try {
+        const offset = page * LIMIT;
 
-  //   fetch(url)
-  //     .then(res => {
-  //       if (!res.ok) {
-  //         throw new Error(`HTTP error! status: ${res.status}`)
-  //       }
-  //       return res.json()
-  //     })
-  //     .then(data => {
-  //       setRecipes(data.recipes || [])
-  //       setCurrentPage(1)
-  //     })
-  //     .catch(err => {
-  //       console.error("Fetch error:", err)
-  //       setRecipes([])
-  //     })
-  // }, [debouncedSearch])
+        const res = await axios.get(
+          "https://api.spoonacular.com/recipes/complexSearch",
+          {
+            params: {
+              apiKey: API_KEY,
+              query: debouncedSearch,
+              number: LIMIT,
+              offset,
+            },
+          }
+        );
 
+        setRecipes((prev) => [...prev, ...res.data.results]);
 
-  const lastIndex = currentPage * productsPerPage
-  const firstIndex = lastIndex - productsPerPage
-  const currentRecipes = recipes.slice(firstIndex, lastIndex)
-  const totalPages = Math.ceil(recipes.length / productsPerPage)
+        if (res.data.results.length < LIMIT) {
+          setHasMore(false);
+        }
+      } catch (error) {
+        console.error("Error fetching recipes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, [page, debouncedSearch]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop + 1 >=
+          document.documentElement.scrollHeight &&
+        !loading &&
+        hasMore
+      ) {
+        setPage((prev) => prev + 1);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [loading, hasMore]);
 
   return (
     <div>
-      <Navbar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+      <Navbar
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
 
       <div className="card-flex">
-        {currentRecipes.length > 0 ? (
-          currentRecipes.map(item => (
-            <Card
-              key={item.id}
-              recipe={item}
-            />
-          ))
-        ) : (
-          <p>No products found matching "{debouncedSearch}"</p>
-        )}
+        {recipes.map((recipe) => (
+          <Card key={recipe.id} recipe={recipe} />
+        ))}
       </div>
 
+      {loading && (
+        <p style={{ textAlign: "center" }}>Loading...</p>
+      )}
 
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <button
-          onClick={() => setCurrentPage(currentPage - 1)}
-          disabled={currentPage === 1}
-          style={{ marginRight: "10px", padding: "8px" }}
-        >
-          Previous
-        </button>
-
-        <button
-          onClick={() => setCurrentPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          style={{ padding: "8px" }}
-        >
-          Next
-        </button>
-      </div>
+      {!hasMore && (
+        <p style={{ textAlign: "center" }}>
+          No more recipes 🍽️
+        </p>
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default RecipyDashboard
+export default RecipyDashboard;
